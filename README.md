@@ -1,14 +1,15 @@
 # RAG Evaluation Framework
 
-A framework for testing and evaluating the outputs of an LLM/RAG system: a labeled test dataset, an automated LLM-as-judge scoring script, tracked performance metrics, root-cause analysis of failure cases, and a targeted few-shot prompt fix for one identified failure category.
+A framework for testing and evaluating the outputs of an LLM/RAG system: a labeled test dataset, an automated LLM-as-judge scoring script, tracked performance metrics, root-cause analysis of failure cases, a targeted few-shot prompt fix, and a final summary report.
 
 ## Project structure
 
-- `test_dataset.py` — Checkpoint 1: a labeled test dataset of 17 question/expected-answer pairs, split into `normal` (directly answerable) and `edge` (ambiguous, multi-part, out-of-scope, or misleading questions) categories
-- `evaluate.py` — Checkpoint 2: automated evaluation script that runs every question through the system and scores the actual answer against the expected answer using an LLM-as-judge (0-5 scale)
-- `metrics_evaluate.py` — Checkpoint 3: extends the evaluation with tracked metrics — pass-rate, average latency, and average token cost per question
-- `ROOT_CAUSE_ANALYSIS.md` — Checkpoint 4: root cause analysis of 3 low-scoring failure cases from the evaluation run
-- `fix_hallucination.py` — Checkpoint 5: few-shot prompt fix for the hallucination-on-out-of-scope-questions failure identified in Checkpoint 4, with a before/after comparison
+- `test_dataset.py` — Checkpoint 1: a labeled test dataset of 17 question/expected-answer pairs, split into `normal` and `edge` categories
+- `evaluate.py` — Checkpoint 2: automated evaluation script using LLM-as-judge scoring (0-5 scale)
+- `metrics_evaluate.py` — Checkpoint 3: adds tracked metrics — pass-rate, average latency, average token cost
+- `ROOT_CAUSE_ANALYSIS.md` — Checkpoint 4: root cause analysis of 3 low-scoring failure cases
+- `fix_hallucination.py` — Checkpoint 5: few-shot prompt fix for hallucination on out-of-scope questions, with before/after comparison
+- `FINAL_REPORT.md` — Checkpoint 6: final report summarizing methodology, results, root causes, and next steps
 
 ## How to run it
 
@@ -44,29 +45,27 @@ python metrics_evaluate.py
 python fix_hallucination.py
 ```
 
-5. Review `ROOT_CAUSE_ANALYSIS.md` for the failure analysis.
+5. Read `ROOT_CAUSE_ANALYSIS.md` and `FINAL_REPORT.md` for the written analysis.
 
 ## How it works
 
 ### Test dataset (Checkpoint 1)
-
-`test_dataset.py` defines 17 question/expected-answer pairs. Normal questions test direct factual recall; edge cases specifically target hallucination risk with empty input, nonsensical input, out-of-scope questions, multi-part compound questions, and misleading questions with false presuppositions.
+17 question/expected-answer pairs: normal questions test direct factual recall; edge cases target hallucination risk with empty input, nonsensical input, out-of-scope questions, multi-part questions, and misleading presuppositions.
 
 ### Automated evaluation (Checkpoint 2)
-
-`evaluate.py` sends each question through the system, then uses a separate Claude call as an impartial judge to score the actual answer against the expected answer/behavior on a 0-5 scale.
+Each question is run through the system, then scored 0-5 by a separate Claude call acting as an impartial judge, based on explicit grading criteria.
 
 ### Tracked metrics (Checkpoint 3)
-
-`metrics_evaluate.py` additionally tracks pass-rate (≥3/5 threshold), average latency (via `time.time()`), and average token cost (via `response.usage`).
+Pass-rate (≥3/5), average latency (`time.time()`), and average token cost (`response.usage`) are computed per run.
 
 ### Root cause analysis (Checkpoint 4)
-
-`ROOT_CAUSE_ANALYSIS.md` documents 3 low-scoring cases and traces each to its underlying cause: a weak grounding prompt, a hardcoded test-harness short-circuit, and an ambiguous placeholder test question.
+3 low-scoring cases are traced to their root causes: a weak grounding prompt, a test-harness design flaw, and a test-data quality issue.
 
 ### Few-shot fix (Checkpoint 5)
+The weak-prompt root cause is fixed with a system prompt + few-shot examples instructing the model to answer only from provided context. A before/after comparison confirms the fix works.
 
-`fix_hallucination.py` addresses the weak-prompt root cause with a before/after comparison. The "before" version calls the model with no system prompt; the "after" version adds a system prompt framing the assistant as document-only, plus 2 few-shot examples of correct refusal behavior. Running the same out-of-scope question through both confirms the fix works: the before version answers from general knowledge, the after version correctly declines.
+### Final report (Checkpoint 6)
+`FINAL_REPORT.md` ties everything together: methodology, key results, the root-cause summary table, the fix outcome, and limitations/next steps — including the finding that most failures were evaluation-harness issues, not model issues.
 
 ## Security
 
