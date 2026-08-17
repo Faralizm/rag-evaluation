@@ -1,11 +1,12 @@
 # RAG Evaluation Framework
 
-A framework for testing and evaluating the outputs of an LLM/RAG system, including a labeled test dataset and an automated LLM-as-judge scoring script.
+A framework for testing and evaluating the outputs of an LLM/RAG system, including a labeled test dataset, an automated LLM-as-judge scoring script, and tracked performance metrics.
 
 ## Project structure
 
 - `test_dataset.py` — Checkpoint 1: a labeled test dataset of 17 question/expected-answer pairs, split into `normal` (directly answerable) and `edge` (ambiguous, multi-part, out-of-scope, or misleading questions) categories
 - `evaluate.py` — Checkpoint 2: automated evaluation script that runs every question through the system and scores the actual answer against the expected answer using an LLM-as-judge (0-5 scale), reporting per-question and per-category average scores
+- `metrics_evaluate.py` — Checkpoint 3: extends the evaluation with tracked metrics — pass-rate, average latency, and average token cost per question — in addition to LLM-as-judge scoring
 
 ## How to run it
 
@@ -37,6 +38,7 @@ ANTHROPIC_API_KEY=your_key_here
 ```
 python test_dataset.py
 python evaluate.py
+python metrics_evaluate.py
 ```
 
 ## How it works
@@ -47,7 +49,16 @@ python evaluate.py
 
 ### Automated evaluation (Checkpoint 2)
 
-`evaluate.py` sends each question through the system, then uses a separate Claude call as an impartial judge to score the actual answer against the expected answer/behavior on a 0-5 scale, based on explicit grading criteria in the judge prompt. Results are aggregated into overall, normal-only, and edge-only average scores, making it easy to see whether the system handles straightforward and adversarial cases differently.
+`evaluate.py` sends each question through the system, then uses a separate Claude call as an impartial judge to score the actual answer against the expected answer/behavior on a 0-5 scale, based on explicit grading criteria in the judge prompt. Results are aggregated into overall, normal-only, and edge-only average scores.
+
+### Tracked metrics (Checkpoint 3)
+
+`metrics_evaluate.py` builds on the evaluation script by additionally tracking:
+- **Pass-rate** — percentage of answers scoring ≥3/5 from the LLM judge
+- **Average latency** — measured with `time.time()` around each API call
+- **Average token cost** — using `response.usage.input_tokens` and `output_tokens` from the Anthropic API
+
+This gives visibility into both correctness and operational cost/performance, useful for catching regressions when the prompt or model changes.
 
 ## Security
 
