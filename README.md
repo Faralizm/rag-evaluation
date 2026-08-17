@@ -1,12 +1,13 @@
 # RAG Evaluation Framework
 
-A framework for testing and evaluating the outputs of an LLM/RAG system, including a labeled test dataset, an automated LLM-as-judge scoring script, and tracked performance metrics.
+A framework for testing and evaluating the outputs of an LLM/RAG system, including a labeled test dataset, an automated LLM-as-judge scoring script, tracked performance metrics, and a root-cause analysis of failure cases.
 
 ## Project structure
 
 - `test_dataset.py` — Checkpoint 1: a labeled test dataset of 17 question/expected-answer pairs, split into `normal` (directly answerable) and `edge` (ambiguous, multi-part, out-of-scope, or misleading questions) categories
 - `evaluate.py` — Checkpoint 2: automated evaluation script that runs every question through the system and scores the actual answer against the expected answer using an LLM-as-judge (0-5 scale), reporting per-question and per-category average scores
 - `metrics_evaluate.py` — Checkpoint 3: extends the evaluation with tracked metrics — pass-rate, average latency, and average token cost per question — in addition to LLM-as-judge scoring
+- `ROOT_CAUSE_ANALYSIS.md` — Checkpoint 4: root cause analysis of 3 low-scoring failure cases from the evaluation run, distinguishing between weak prompting, weak evaluation-harness design, and weak test-data quality
 
 ## How to run it
 
@@ -41,6 +42,8 @@ python evaluate.py
 python metrics_evaluate.py
 ```
 
+5. Review `ROOT_CAUSE_ANALYSIS.md` for the failure analysis.
+
 ## How it works
 
 ### Test dataset (Checkpoint 1)
@@ -58,7 +61,9 @@ python metrics_evaluate.py
 - **Average latency** — measured with `time.time()` around each API call
 - **Average token cost** — using `response.usage.input_tokens` and `output_tokens` from the Anthropic API
 
-This gives visibility into both correctness and operational cost/performance, useful for catching regressions when the prompt or model changes.
+### Root cause analysis (Checkpoint 4)
+
+`ROOT_CAUSE_ANALYSIS.md` documents 3 specific low-scoring cases and traces each to its underlying cause: a weak grounding prompt that let the model hallucinate on an out-of-scope question, a hardcoded test-harness short-circuit that didn't actually exercise the LLM on empty input, and an ambiguous placeholder-style test question. Two of the three issues turned out to be evaluation-harness or test-data problems rather than genuine model failures.
 
 ## Security
 
